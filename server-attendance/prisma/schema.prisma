@@ -1,0 +1,128 @@
+// backend-api/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id              String   @id @default(cuid())
+  employee_code   String   @unique
+  name            String
+  email           String   @unique
+  phone           String   @unique
+  password_hash   String
+  role            Role     @default(EMPLOYEE)
+  designation     String
+  department      String
+  status          Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  // Relations
+  attendances     Attendance[]
+  leave_requests  LeaveRequest[]
+
+  @@index([email])
+  @@index([employee_code])
+  @@map("employees")
+}
+
+model Attendance {
+  id              String    @id @default(cuid())
+  employee_id     String
+  employee        Employee  @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  
+  attendance_date DateTime
+  check_in_time   DateTime?
+  check_out_time  DateTime?
+  
+  check_in_lat    Float?
+  check_in_lng    Float?
+  check_out_lat   Float?
+  check_out_lng   Float?
+  
+  check_in_photo  String?     // Cloudinary URL
+  check_out_photo String?     // Cloudinary URL
+  
+  check_in_device  String?
+  check_out_device String?
+  
+  attendance_status AttendanceStatus @default(ABSENT)
+  remarks           String?
+  
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@unique([employee_id, attendance_date])
+  @@index([employee_id])
+  @@index([attendance_date])
+  @@map("attendance")
+}
+
+model LeaveRequest {
+  id            String   @id @default(cuid())
+  employee_id   String
+  employee      Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+  
+  from_date     DateTime
+  to_date       DateTime
+  leave_type    LeaveType
+  reason        String
+  status        LeaveStatus @default(PENDING)
+  approved_by   String?
+  
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@index([employee_id])
+  @@index([status])
+  @@map("leave_requests")
+}
+
+model OfficeSettings {
+  id                String   @id @default(cuid())
+  office_name       String   @default("Company Office")
+  office_latitude   Float    @default(28.6139)
+  office_longitude  Float    @default(77.2090)
+  allowed_radius    Int      @default(500) // in meters
+  office_start_time String   @default("09:00")
+  office_end_time   String   @default("18:00")
+  
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  @@map("office_settings")
+}
+
+// Enums
+enum Role {
+  ADMIN
+  HR
+  EMPLOYEE
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  OUTSIDE_OFFICE
+}
+
+enum LeaveType {
+  SICK
+  CASUAL
+  EARNED
+  UNPAID
+  MATERNITY
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
