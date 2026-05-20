@@ -15,11 +15,7 @@ import { useAuthStore } from '../store/authStore';
 import { authApi } from '../api/endpoints';
 import { validateEmail, validatePassword } from '../utils/authUtils';
 
-interface LoginScreenProps {
-  navigation: any;
-}
-
-export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
+export const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -61,7 +57,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       if (response.data.success && response.data.data) {
         const { user, tokens } = response.data.data;
         await login(user, tokens);
-        navigation.navigate('Home');
+        // Do not navigate here: `Home` lives on the Tab navigator, not AuthStack.
+        // `RootNavigator` swaps to `AppStack` when `isAuthenticated` becomes true.
       } else {
         setError(response.data.message || 'Login failed');
         Alert.alert('Login Failed', response.data.message || 'Please try again');

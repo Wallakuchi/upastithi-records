@@ -1,8 +1,8 @@
 // backend-api/src/middleware/validation.ts
 
-import { Request, Response, NextFunction } from 'express';
-import { ZodSchema } from 'zod';
-import { sendValidationError } from '../utils/response.util';
+import { Request, Response, NextFunction } from "express";
+import { ZodSchema } from "zod";
+import { sendValidationError } from "../utils/response.util";
 
 /**
  * Validation middleware using Zod
@@ -11,11 +11,18 @@ export function validateRequest(schema: ZodSchema) {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
       const result = schema.safeParse(req.body);
+      console.log("REQ BODY =>", JSON.stringify(req.body, null, 2));
 
+      if (!result.success) {
+        console.log(
+          "VALIDATION ERRORS =>",
+          JSON.stringify(result.error.flatten(), null, 2),
+        );
+      }
       if (!result.success) {
         const errors: Record<string, string[]> = {};
         result.error.errors.forEach((err) => {
-          const field = err.path.join('.');
+          const field = err.path.join(".");
           if (!errors[field]) {
             errors[field] = [];
           }
@@ -29,7 +36,7 @@ export function validateRequest(schema: ZodSchema) {
       req.body = result.data;
       next();
     } catch (error) {
-      sendValidationError(res, { general: ['Validation failed'] });
+      sendValidationError(res, { general: ["Validation failed"] });
     }
   };
 }
@@ -45,7 +52,7 @@ export function validateQuery(schema: ZodSchema) {
       if (!result.success) {
         const errors: Record<string, string[]> = {};
         result.error.errors.forEach((err) => {
-          const field = err.path.join('.');
+          const field = err.path.join(".");
           if (!errors[field]) {
             errors[field] = [];
           }
@@ -58,7 +65,7 @@ export function validateQuery(schema: ZodSchema) {
       req.query = result.data;
       next();
     } catch (error) {
-      sendValidationError(res, { general: ['Query validation failed'] });
+      sendValidationError(res, { general: ["Query validation failed"] });
     }
   };
 }
@@ -74,7 +81,7 @@ export function validateParams(schema: ZodSchema) {
       if (!result.success) {
         const errors: Record<string, string[]> = {};
         result.error.errors.forEach((err) => {
-          const field = err.path.join('.');
+          const field = err.path.join(".");
           if (!errors[field]) {
             errors[field] = [];
           }
@@ -87,7 +94,7 @@ export function validateParams(schema: ZodSchema) {
       req.params = result.data;
       next();
     } catch (error) {
-      sendValidationError(res, { general: ['Params validation failed'] });
+      sendValidationError(res, { general: ["Params validation failed"] });
     }
   };
 }

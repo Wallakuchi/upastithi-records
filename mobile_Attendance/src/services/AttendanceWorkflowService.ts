@@ -1,11 +1,10 @@
 // mobile-app/src/services/AttendanceWorkflowService.ts
 
-import { LocationService } from './LocationService';
-import { CameraService } from './CameraService';
-import { attendanceApi } from '../api/endpoints';
-import { DeviceInfoService } from './DeviceInfoService';
-import { GeoLocation } from '../types/index';
-import * as FileSystem from 'react-native-fs';
+import {LocationService} from './LocationService';
+import {CameraService} from './CameraService';
+import {attendanceApi} from '../api/endpoints';
+import {DeviceInfoService} from './DeviceInfoService';
+import {GeoLocation} from '../types/index';
 
 interface CheckInStartResult {
   success: boolean;
@@ -27,25 +26,12 @@ interface AttendanceCompleteResult {
   timestamp?: string;
 }
 
-interface AttendancePayload {
-  employee_id: string;
-  latitude: number;
-  longitude: number;
-  selfie_photo: string;
-  device_info: {
-    os: string;
-    osVersion: string;
-    model: string;
-    appVersion: string;
-  };
-}
-
 // Haversine formula to calculate distance between two GPS coordinates
 function calculateDistance(
   lat1: number,
   lon1: number,
   lat2: number,
-  lon2: number
+  lon2: number,
 ): number {
   const R = 6371000; // Earth's radius in meters
   const toRad = (deg: number) => (deg * Math.PI) / 180;
@@ -57,7 +43,10 @@ function calculateDistance(
 
   const a =
     Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-    Math.cos(lat1Rad) * Math.cos(lat2Rad) * Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+    Math.cos(lat1Rad) *
+      Math.cos(lat2Rad) *
+      Math.sin(deltaLng / 2) *
+      Math.sin(deltaLng / 2);
 
   const c = 2 * Math.asin(Math.sqrt(a));
   return R * c;
@@ -68,7 +57,8 @@ function calculateDistance(
  * Handles: permissions, location fetching, office radius validation, camera capture, and upload
  */
 export class AttendanceWorkflowService {
-  private static officeLocation: { latitude: number; longitude: number } | null = null;
+  private static officeLocation: {latitude: number; longitude: number} | null =
+    null;
   private static officeRadius: number = 100; // Default 100 meters
 
   /**
@@ -86,14 +76,20 @@ export class AttendanceWorkflowService {
           latitude: 28.553306, // Default fallback
           longitude: 77.204705,
         };
-        console.log('Office location initialized to default:', this.officeLocation);
+        console.log(
+          'Office location initialized to default:',
+          this.officeLocation,
+        );
       }
-      
+
       // Increased radius for flexibility during testing
       // Adjust based on office size and testing needs
       // Testing: 2000m, Staging: 500m, Production: 100-200m
       this.officeRadius = 2000; // 2km radius for testing
-      console.log('Attendance service initialized with radius:', this.officeRadius);
+      console.log(
+        'Attendance service initialized with radius:',
+        this.officeRadius,
+      );
     } catch (error) {
       console.error('Failed to initialize attendance service:', error);
       // Continue with defaults
@@ -107,11 +103,13 @@ export class AttendanceWorkflowService {
   static async startCheckIn(): Promise<CheckInStartResult> {
     try {
       // Request location permission
-      const permissionGranted = await LocationService.requestLocationPermission();
+      const permissionGranted =
+        await LocationService.requestLocationPermission();
       if (!permissionGranted) {
         return {
           success: false,
-          error: 'Location permission denied. Please enable location access in settings.',
+          error:
+            'Location permission denied. Please enable location access in settings.',
         };
       }
 
@@ -130,10 +128,22 @@ export class AttendanceWorkflowService {
           location.latitude,
           location.longitude,
           this.officeLocation.latitude,
-          this.officeLocation.longitude
+          this.officeLocation.longitude,
         );
         isWithinRadius = distance <= this.officeRadius;
-        console.log(`📍 Distance Calculation: Your Location: (${location.latitude.toFixed(4)}, ${location.longitude.toFixed(4)}), Office: (${this.officeLocation.latitude.toFixed(4)}, ${this.officeLocation.longitude.toFixed(4)}), Distance: ${(distance / 1000).toFixed(2)}km, Radius: ${(this.officeRadius / 1000).toFixed(2)}km, Within: ${isWithinRadius}`);
+        console.log(
+          `📍 Distance Calculation: Your Location: (${location.latitude.toFixed(
+            4,
+          )}, ${location.longitude.toFixed(
+            4,
+          )}), Office: (${this.officeLocation.latitude.toFixed(
+            4,
+          )}, ${this.officeLocation.longitude.toFixed(4)}), Distance: ${(
+            distance / 1000
+          ).toFixed(2)}km, Radius: ${(this.officeRadius / 1000).toFixed(
+            2,
+          )}km, Within: ${isWithinRadius}`,
+        );
       }
 
       return {
@@ -154,15 +164,17 @@ export class AttendanceWorkflowService {
    */
   static async captureAndUploadSelfie(
     onCameraOpen?: () => void,
-    onCameraClose?: () => void
+    onCameraClose?: () => void,
   ): Promise<SelfieUploadResult> {
     try {
       // Request camera permission
-      const cameraPermissionGranted = await CameraService.requestCameraPermission();
+      const cameraPermissionGranted =
+        await CameraService.requestCameraPermission();
       if (!cameraPermissionGranted) {
         return {
           success: false,
-          error: 'Camera permission denied. Please enable camera access in settings.',
+          error:
+            'Camera permission denied. Please enable camera access in settings.',
         };
       }
 
@@ -194,41 +206,55 @@ export class AttendanceWorkflowService {
   static async completeCheckIn(
     employeeId: string,
     location: GeoLocation,
-    photoBase64: string
+    photoUrl: string,
   ): Promise<AttendanceCompleteResult> {
     try {
-      // Get device information
       const deviceInfo = await DeviceInfoService.getDeviceInfo();
 
-      const payload: AttendancePayload = {
+      const payload = {
         employee_id: employeeId,
         latitude: location.latitude,
         longitude: location.longitude,
-        selfie_photo: photoBase64,
-        device_info: deviceInfo,
+        selfie_photo: photoUrl,
+        device_info: JSON.stringify(deviceInfo),
       };
 
+      console.log('CHECKIN PAYLOAD => ', payload);
+
       const response = await attendanceApi.checkIn(payload);
-      console.log('res :', response)
-      if (response.success) {
+
+      const body = response.data as {
+        success?: boolean;
+        message?: string;
+      };
+
+      if (body?.success) {
         return {
           success: true,
-          message: 'Check-in recorded successfully',
+          message: body.message || 'Check-in recorded successfully',
           timestamp: new Date().toLocaleTimeString('en-IN', {
             hour: '2-digit',
             minute: '2-digit',
           }),
         };
-      } else {
-        return {
-          success: false,
-          error: response.message || 'Failed to record check-in',
-        };
       }
-    } catch (error: any) {
+
       return {
         success: false,
-        error: error.message || 'Failed to complete check-in',
+        error: body?.message || 'Failed to record check-in',
+      };
+    } catch (error: any) {
+      console.log(
+        'CHECKIN ERROR =>',
+        JSON.stringify(error.response?.data, null, 2),
+      );
+
+      return {
+        success: false,
+        error:
+          error.response?.data?.message ||
+          error.message ||
+          'Failed to complete check-in',
       };
     }
   }
@@ -239,41 +265,50 @@ export class AttendanceWorkflowService {
   static async completeCheckOut(
     employeeId: string,
     location: GeoLocation,
-    photoBase64: string
+    photoUrl: string,
   ): Promise<AttendanceCompleteResult> {
     try {
       // Get device information
       const deviceInfo = await DeviceInfoService.getDeviceInfo();
 
-      const payload: AttendancePayload = {
+      const payload = {
         employee_id: employeeId,
         latitude: location.latitude,
         longitude: location.longitude,
-        selfie_photo: photoBase64,
-        device_info: deviceInfo,
+        selfie_photo: photoUrl,
+        device_info: JSON.stringify(deviceInfo),
       };
 
       const response = await attendanceApi.checkOut(payload);
+      const body = response.data as {
+        success?: boolean;
+        message?: string;
+      };
 
-      if (response.success) {
+      if (body?.success) {
         return {
           success: true,
-          message: 'Check-out recorded successfully',
+          message: body.message || 'Check-out recorded successfully',
           timestamp: new Date().toLocaleTimeString('en-IN', {
             hour: '2-digit',
             minute: '2-digit',
           }),
         };
-      } else {
-        return {
-          success: false,
-          error: response.message || 'Failed to record check-out',
-        };
       }
-    } catch (error: any) {
+
       return {
         success: false,
-        error: error.message || 'Failed to complete check-out',
+        error: body?.message || 'Failed to record check-out',
+      };
+    } catch (error: any) {
+      const msg =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        'Failed to complete check-out';
+      return {
+        success: false,
+        error: typeof msg === 'string' ? msg : 'Failed to complete check-out',
       };
     }
   }
@@ -294,7 +329,7 @@ export class AttendanceWorkflowService {
       location.latitude,
       location.longitude,
       this.officeLocation.latitude,
-      this.officeLocation.longitude
+      this.officeLocation.longitude,
     );
 
     return distance <= this.officeRadius;
@@ -316,7 +351,7 @@ export class AttendanceWorkflowService {
       location.latitude,
       location.longitude,
       this.officeLocation.latitude,
-      this.officeLocation.longitude
+      this.officeLocation.longitude,
     );
   }
 
@@ -330,7 +365,7 @@ export class AttendanceWorkflowService {
   /**
    * Get office location
    */
-  static getOfficeLocation(): { latitude: number; longitude: number } | null {
+  static getOfficeLocation(): {latitude: number; longitude: number} | null {
     return this.officeLocation;
   }
 }

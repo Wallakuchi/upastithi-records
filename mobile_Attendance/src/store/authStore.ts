@@ -1,9 +1,7 @@
 import { create } from 'zustand';
-import { MMKV } from 'react-native-mmkv';
 import { User } from '../types/index';
 import { authApi } from '../api/endpoints';
-
-const storage = new MMKV();
+import { appStorage as storage } from '../storage/appStorage';
 
 interface AuthStore {
   user: User | null;

@@ -1,4 +1,7 @@
-export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+import { getApiBaseUrl } from '../config/apiBaseUrl';
+
+/** Resolved API root (emulator vs physical device — see `src/config/apiBaseUrl.ts`). */
+export const API_BASE_URL = getApiBaseUrl();
 
 export const APP_CONSTANTS = {
   REQUEST_TIMEOUT: 10000,

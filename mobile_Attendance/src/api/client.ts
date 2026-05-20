@@ -1,20 +1,19 @@
 import axios, { AxiosInstance } from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://192.168.1.29:5000/api';
-const API_BASE_URL = 'http://192.168.1.29:5000/api';
+import { getApiBaseUrl } from '../config/apiBaseUrl';
+import { appStorage } from '../storage/appStorage';
 
 class ApiClient {
   private client: AxiosInstance;
 
   constructor() {
     this.client = axios.create({
-      baseURL: API_BASE_URL,
+      baseURL: getApiBaseUrl(),
       timeout: 10000,
     });
 
-    this.client.interceptors.request.use(async (config) => {
-      const token = await AsyncStorage.getItem('authToken');
+    // Must read the same storage as `authStore` (login writes to MMKV, not AsyncStorage).
+    this.client.interceptors.request.use((config) => {
+      const token = appStorage.getString('authToken');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -25,7 +24,8 @@ class ApiClient {
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
-          AsyncStorage.removeItem('authToken');
+          appStorage.delete('authToken');
+          appStorage.delete('refreshToken');
         }
         return Promise.reject(error);
       }

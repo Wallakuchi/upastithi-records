@@ -13,16 +13,28 @@ export const authApi = {
   getCurrentUser: () =>
     apiClient.get<ApiResponse<User>>('/auth/me'),
 
-  refreshToken: () =>
-    apiClient.post<ApiResponse<{ tokens: { access_token: string; refresh_token: string } }>>('/auth/refresh'),
+  refreshToken: (refresh_token: string) =>
+    apiClient.post<ApiResponse<{ tokens: { access_token: string; refresh_token: string } }>>('/auth/refresh', {
+      refresh_token,
+    }),
 };
 
-export const attendanceApi = {
-  checkIn: (location: { latitude: number; longitude: number }, photo?: string) =>
-    apiClient.post('/attendance/check-in', { location, photo }),
+/** Matches server `checkInSchema` / `checkOutSchema` (flat body). */
+export interface AttendanceCheckPayload {
+  employee_id: string;
+  latitude: number;
+  longitude: number;
+  selfie_photo: string;
+  /** Optional JSON string — server stores as plain text */
+  device_info?: string;
+}
 
-  checkOut: (location?: { latitude: number; longitude: number }) =>
-    apiClient.post('/attendance/check-out', { location }),
+export const attendanceApi = {
+  checkIn: (payload: AttendanceCheckPayload) =>
+    apiClient.post('/attendance/check-in', payload, { timeout: 120000 }),
+
+  checkOut: (payload: AttendanceCheckPayload) =>
+    apiClient.post('/attendance/check-out', payload, { timeout: 120000 }),
 
   getHistory: (startDate?: string, endDate?: string, page?: number, limit?: number) =>
     apiClient.get('/attendance/history', { 

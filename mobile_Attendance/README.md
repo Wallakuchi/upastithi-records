@@ -64,6 +64,32 @@ You've successfully run and modified your React Native App. :partying_face:
 - If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
 - If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
 
+# Backend API (dashboard works, phone does not?)
+
+The admin dashboard uses `http://localhost:5000` because the browser runs on the same PC as the API. **A phone or tablet cannot use your PC’s `localhost`** unless you forward the port.
+
+## Physical Android + USB cable (recommended for dev)
+
+1. Connect the phone with USB and enable **USB debugging**.
+2. With the device visible to `adb`, run **once per PC reboot** (or whenever reverse drops):
+
+   ```bash
+   adb reverse tcp:5000 tcp:5000
+   ```
+
+3. Start `server-attendance` on port **5000** on your computer.
+4. In `src/config/apiBaseUrl.ts`, keep **`USE_ANDROID_USB_ADB_REVERSE = true`** and leave **`DEV_LAN_HOST`** empty. The app calls `http://127.0.0.1:5000/api` on the phone; `adb reverse` sends that to your PC’s port 5000.
+
+If API calls still fail, run `adb reverse --list` and confirm `tcp:5000 tcp:5000` is listed.
+
+## Emulator / simulator
+
+The app picks the host automatically (`10.0.2.2` on Android emulator, `localhost` on iOS simulator). Start the API on port **5000**.
+
+## Physical device on Wi‑Fi only
+
+Set `USE_ANDROID_USB_ADB_REVERSE = false` and set **`DEV_LAN_HOST`** to your PC’s LAN IPv4 (e.g. `192.168.1.42`). Same Wi‑Fi as the phone; you may need Windows Firewall to allow inbound TCP **5000**.
+
 # Troubleshooting
 
 If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.

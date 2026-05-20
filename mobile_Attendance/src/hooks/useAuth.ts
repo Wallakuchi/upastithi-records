@@ -1,18 +1,21 @@
 import { useCallback } from 'react';
 import { useAuthStore } from '../store/authStore';
-import { authApi } from '../api/api';
-import { User, AuthTokens } from '../types/index';
+import { authApi } from '../api/endpoints';
+import { User } from '../types/index';
 
+/**
+ * Optional hook aligned with `useAuthStore` + `authApi` (axios responses).
+ * Most screens call `authApi` / the store directly; this is here for reuse.
+ */
 export const useAuth = () => {
   const {
     user,
-    tokens,
-    loading,
+    token,
+    isLoading,
     error,
     isAuthenticated,
     login: storeLogin,
     logout: storeLogout,
-    setLoading,
     setError,
     restoreToken,
     getAccessToken,
@@ -21,44 +24,39 @@ export const useAuth = () => {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      setLoading(true);
       setError(null);
 
       try {
         const response = await authApi.login(email, password);
+        const body = response.data;
 
-        if (!response.success || !response.data) {
-          throw new Error(response.message || 'Login failed');
+        if (!body.success || !body.data) {
+          throw new Error(body.message || 'Login failed');
         }
 
-        const { user, tokens } = response.data;
-        await storeLogin(user, tokens);
+        const { user: u, tokens } = body.data;
+        await storeLogin(u, tokens);
 
-        return { success: true, user, tokens };
+        return { success: true, user: u, tokens };
       } catch (err: any) {
         const errorMessage =
           err.response?.data?.message || err.message || 'Login failed';
         setError(errorMessage);
         throw err;
-      } finally {
-        setLoading(false);
       }
     },
-    [storeLogin, setLoading, setError]
+    [storeLogin, setError],
   );
 
   const logout = useCallback(async () => {
-    setLoading(true);
-
     try {
       await authApi.logout();
     } catch (err) {
       console.error('Logout API call failed:', err);
     } finally {
       await storeLogout();
-      setLoading(false);
     }
-  }, [storeLogout, setLoading]);
+  }, [storeLogout]);
 
   const getCurrentUser = useCallback(() => {
     return user;
@@ -68,10 +66,6 @@ export const useAuth = () => {
     return isAuthenticated;
   }, [isAuthenticated]);
 
-  const getTokens = useCallback(() => {
-    return tokens;
-  }, [tokens]);
-
   const refreshAccessToken = useCallback(async () => {
     try {
       const refreshToken = getRefreshToken();
@@ -79,13 +73,14 @@ export const useAuth = () => {
         throw new Error('No refresh token available');
       }
 
-      const response = await authApi.refresh(refreshToken);
+      const response = await authApi.refreshToken(refreshToken);
+      const body = response.data;
 
-      if (!response.success || !response.data) {
+      if (!body.success || !body.data) {
         throw new Error('Token refresh failed');
       }
 
-      const { tokens: newTokens } = response.data;
+      const { tokens: newTokens } = body.data;
       useAuthStore.getState().setTokens(newTokens);
 
       return newTokens.access_token;
@@ -97,19 +92,15 @@ export const useAuth = () => {
   }, [getRefreshToken, storeLogout, setError]);
 
   return {
-    // State
     user,
-    tokens,
-    loading,
+    token,
+    isLoading,
     error,
     isAuthenticated,
-
-    // Actions
     login,
     logout,
     getCurrentUser,
     checkAuthenticated,
-    getTokens,
     refreshAccessToken,
     restoreToken,
     getAccessToken,

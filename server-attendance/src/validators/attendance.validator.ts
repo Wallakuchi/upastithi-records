@@ -6,7 +6,7 @@ export const checkInSchema = z.object({
   employee_id: z.string().cuid('Invalid employee ID'),
   latitude: z.number().min(-90).max(90, 'Invalid latitude'),
   longitude: z.number().min(-180).max(180, 'Invalid longitude'),
-  selfie_photo: z.string().min(100, 'Invalid image data'), // base64 or file path
+  selfie_photo: z.string().url('Invalid selfie image URL'),
   device_info: z.string().optional(),
 });
 
@@ -14,7 +14,7 @@ export const checkOutSchema = z.object({
   employee_id: z.string().cuid('Invalid employee ID'),
   latitude: z.number().min(-90).max(90, 'Invalid latitude'),
   longitude: z.number().min(-180).max(180, 'Invalid longitude'),
-  selfie_photo: z.string().min(100, 'Invalid image data'),
+  selfie_photo: z.string().url('Invalid selfie image URL'),
   device_info: z.string().optional(),
 });
 

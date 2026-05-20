@@ -2,7 +2,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { calculateDistance, GeoCoordinates, isWithinOfficeRadius } from '../utils/geodistance.util';
-import { CloudinaryService } from '../utils/cloudinary.util';
+// import { CloudinaryService } from '../utils/cloudinary.util';
 import { CheckInInput, CheckOutInput } from '../validators/attendance.validator';
 
 const prisma = new PrismaClient();
@@ -56,18 +56,19 @@ export class AttendanceService {
     );
 
     // Upload selfie to Cloudinary
-    let selfieUrl = '';
-    try {
-      const fileName = `checkin_${data.employee_id}_${Date.now()}`;
-      selfieUrl = await CloudinaryService.uploadBase64(
-        data.selfie_photo,
-        fileName,
-        'attendance/checkin'
-      );
-    } catch (error: any) {
-      console.error('Cloudinary upload error:', error.message);
-      throw new Error('Failed to upload selfie. Please try again.');
-    }
+    // let selfieUrl = '';
+    // try {
+    //   const fileName = `checkin_${data.employee_id}_${Date.now()}`;
+    //   selfieUrl = await CloudinaryService.uploadBase64(
+    //     data.selfie_photo,
+    //     fileName,
+    //     'attendance/checkin'
+    //   );
+    // } catch (error: any) {
+    //   console.error('Cloudinary upload error:', error.message);
+    //   throw new Error('Failed to upload selfie. Please try again.');
+    // }
+    const selfieUrl = data.selfie_photo;
 
     // Determine attendance status
     const checkInTime = new Date();
@@ -108,6 +109,7 @@ export class AttendanceService {
     });
 
     return {
+      "success": true,
       message: 'Check-in successful',
       attendance: {
         id: attendance.id,
@@ -157,17 +159,18 @@ export class AttendanceService {
     }
 
     // Upload selfie to Cloudinary
-    let selfieUrl = '';
-    try {
-      const fileName = `checkout_${data.employee_id}_${Date.now()}`;
-      selfieUrl = await CloudinaryService.uploadBase64(
-        data.selfie_photo,
-        fileName,
-        'attendance/checkout'
-      );
-    } catch (error: any) {
-      throw new Error('Failed to upload selfie. Please try again.');
-    }
+    // let selfieUrl = '';
+    // try {
+    //   const fileName = `checkout_${data.employee_id}_${Date.now()}`;
+    //   selfieUrl = await CloudinaryService.uploadBase64(
+    //     data.selfie_photo,
+    //     fileName,
+    //     'attendance/checkout'
+    //   );
+    // } catch (error: any) {
+    //   throw new Error('Failed to upload selfie. Please try again.');
+    // }
+    const selfieUrl = data.selfie_photo;
 
     // Check if within radius
     const employeeLocation: GeoCoordinates = {
