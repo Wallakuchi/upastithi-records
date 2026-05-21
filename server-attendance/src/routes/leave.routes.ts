@@ -1,9 +1,12 @@
-// backend-api/src/routes/leave.ts
-
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authenticateToken, authorize } from '../middleware/auth.middleware';
-import { sendSuccess, sendError, sendPaginated, sendCreated } from '../utils/response.util';
+import {
+  sendSuccess,
+  sendError,
+  sendPaginated,
+  sendCreated,
+} from '../utils/response.util';
 import { catchAsync } from '../middleware/error.handler';
 
 const router = Router();
@@ -30,13 +33,15 @@ router.post(
           from_date: new Date(from_date),
           to_date: new Date(to_date),
           leave_type: leave_type.toUpperCase(),
-          reason,
+          reason: reason.trim(),
+          status: 'PENDING',
         },
       });
 
-      sendCreated(res, leaveRequest, 'Leave request created');
+      return sendCreated(res, leaveRequest, 'Leave request created successfully');
     } catch (error: any) {
-      sendError(res, 400, error.message);
+      console.error('Create Leave Error:', error);
+      return sendError(res, 500, error.message || 'Failed to create leave request');
     }
   })
 );
@@ -50,13 +55,14 @@ router.get(
   authenticateToken,
   catchAsync(async (req: any, res: Response) => {
     try {
-      const page = Math.max(1, parseInt(req.query.page) || 1);
-      const limit = Math.min(100, parseInt(req.query.limit) || 20);
+      const page = Math.max(1, parseInt(req.query.page as string) || 1);
+      const limit = Math.min(100, parseInt(req.query.limit as string) || 20);
+
       const skip = (page - 1) * limit;
 
       const where: any = {};
 
-      // If not admin/hr, only show own requests
+      // Employee sees only own leaves
       if (!['ADMIN', 'HR'].includes(req.user.role)) {
         where.employee_id = req.user.userId;
       }
@@ -66,26 +72,42 @@ router.get(
           where,
           include: {
             employee: {
-              select: { id: true, name: true, employee_code: true },
+              select: {
+                id: true,
+                name: true,
+                employee_code: true,
+              },
             },
+          },
+          orderBy: {
+            created_at: 'desc',
           },
           skip,
           take: limit,
-          orderBy: { created_at: 'desc' },
         }),
-        prisma.leaveRequest.count({ where }),
+
+        prisma.leaveRequest.count({
+          where,
+        }),
       ]);
 
-      sendPaginated(res, leaveRequests, total, page, limit);
+      return sendPaginated(
+        res,
+        leaveRequests,
+        total,
+        page,
+        limit
+      );
     } catch (error: any) {
-      sendError(res, 500, error.message);
+      console.error('Get Leave Error:', error);
+      return sendError(res, 500, error.message || 'Failed to fetch leaves');
     }
   })
 );
 
 /**
  * PUT /api/leaves/:id
- * Update leave request status (Admin/HR only)
+ * Approve / Reject leave
  */
 router.put(
   '/:id',
@@ -93,26 +115,46 @@ router.put(
   authorize('ADMIN', 'HR'),
   catchAsync(async (req: any, res: Response) => {
     try {
-      const { status, remarks } = req.body;
+      const { status } = req.body;
 
-      if (!status || !['APPROVED', 'REJECTED'].includes(status)) {
+      if (!status) {
+        return sendError(res, 400, 'Status is required');
+      }
+
+      const normalizedStatus = status.toUpperCase();
+
+      if (!['APPROVED', 'REJECTED'].includes(normalizedStatus)) {
         return sendError(res, 400, 'Invalid status');
       }
 
       const leaveRequest = await prisma.leaveRequest.update({
-        where: { id: req.params.id },
+        where: {
+          id: req.params.id,
+        },
         data: {
-          status: status.toUpperCase(),
+          status: normalizedStatus,
           approved_by: req.user.userId,
         },
       });
 
-      sendSuccess(res, 200, 'Leave request updated', leaveRequest);
+      return sendSuccess(
+        res,
+        200,
+        'Leave request updated successfully',
+        leaveRequest
+      );
     } catch (error: any) {
+      console.error('Update Leave Error:', error);
+
       if (error.code === 'P2025') {
         return sendError(res, 404, 'Leave request not found');
       }
-      sendError(res, 500, error.message);
+
+      return sendError(
+        res,
+        500,
+        error.message || 'Failed to update leave request'
+      );
     }
   })
 );

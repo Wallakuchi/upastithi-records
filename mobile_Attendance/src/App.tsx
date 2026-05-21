@@ -1,11 +1,12 @@
-import React, { useEffect } from 'react';
-import { SafeAreaView, StyleSheet } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { RootNavigator } from './navigation/RootNavigator';
-import { useAuthStore } from './store/authStore';
+import React, {useEffect} from 'react';
+import {SafeAreaView, StyleSheet} from 'react-native';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import {RootNavigator} from './navigation/RootNavigator';
+import {useAuthStore} from './store/authStore';
+import Toast from 'react-native-toast-message';
 
 const App = () => {
-  const { getCurrentUser, token } = useAuthStore();
+  const {getCurrentUser, token} = useAuthStore();
 
   useEffect(() => {
     useAuthStore.getState().restoreToken();
@@ -23,6 +24,8 @@ const App = () => {
     <GestureHandlerRootView style={styles.container}>
       <SafeAreaView style={styles.container}>
         <RootNavigator />
+        {/* GLOBAL TOAST */}
+        <Toast />
       </SafeAreaView>
     </GestureHandlerRootView>
   );

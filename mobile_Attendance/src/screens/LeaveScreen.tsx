@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -15,10 +15,11 @@ import {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Toast from 'react-native-toast-message';
-import { useAuthStore } from '../store/authStore';
-import { leaveApi } from '../api/endpoints';
-import { LeaveRequest } from '../types/index';
-import { Button } from '../components/Button';
+import {useAuthStore} from '../store/authStore';
+import {leaveApi} from '../api/endpoints';
+import {LeaveRequest} from '../types/index';
+import {Button} from '../components/Button';
+import {formatDate, formatLocalDate} from '../utils/helpers';
 
 type LeaveType = 'SICK' | 'CASUAL' | 'EARNED' | 'UNPAID' | 'MATERNITY';
 
@@ -26,7 +27,7 @@ type LeaveType = 'SICK' | 'CASUAL' | 'EARNED' | 'UNPAID' | 'MATERNITY';
  * LeaveScreen - Create leave requests and view past leave history
  */
 export const LeaveScreen: React.FC = () => {
-  const { user } = useAuthStore();
+  const {user} = useAuthStore();
 
   const [fromDate, setFromDate] = useState<Date>(new Date());
   const [toDate, setToDate] = useState<Date>(new Date());
@@ -42,7 +43,13 @@ export const LeaveScreen: React.FC = () => {
   const [showToDatePicker, setShowToDatePicker] = useState(false);
   const [showLeaveTypeMenu, setShowLeaveTypeMenu] = useState(false);
 
-  const leaveTypes: LeaveType[] = ['CASUAL', 'SICK', 'EARNED', 'UNPAID', 'MATERNITY'];
+  const leaveTypes: LeaveType[] = [
+    'CASUAL',
+    'SICK',
+    'EARNED',
+    'UNPAID',
+    'MATERNITY',
+  ];
 
   useEffect(() => {
     fetchLeaveHistory();
@@ -54,7 +61,9 @@ export const LeaveScreen: React.FC = () => {
       const response = await leaveApi.getAll(1, 10);
 
       if (response?.data) {
-        const leaveData = Array.isArray(response.data) ? response.data : response.data.data || [];
+        const leaveData = Array.isArray(response.data)
+          ? response.data
+          : response.data.data || [];
         setLeaveHistory(leaveData as LeaveRequest[]);
       }
     } catch (error) {
@@ -102,52 +111,56 @@ export const LeaveScreen: React.FC = () => {
       setSubmitting(true);
 
       const payload = {
-        from_date: fromDate.toISOString().split('T')[0],
-        to_date: toDate.toISOString().split('T')[0],
+        from_date: formatLocalDate(fromDate),
+        to_date: formatLocalDate(toDate),
         leave_type: leaveType,
         reason: reason.trim(),
       };
 
       const response = await leaveApi.create(payload);
 
-      if (response.success) {
+      // ✅ FIXED CHECK
+      if (response?.data?.success) {
         Toast.show({
           type: 'success',
           text1: 'Success',
           text2: 'Leave request submitted successfully',
+          visibilityTime: 4000,
+          autoHide: true,
         });
 
+        // Reset form
         setReason('');
         setFromDate(new Date());
         setToDate(new Date());
         setLeaveType('CASUAL');
 
-        await fetchLeaveHistory();
+        // Reload history
+        setTimeout(async () => {
+          await fetchLeaveHistory();
+        }, 1000);
+        // await fetchLeaveHistory();
       } else {
         Toast.show({
           type: 'error',
           text1: 'Error',
-          text2: response.message || 'Failed to submit leave request',
+          text2: 'Failed to submit leave request',
         });
       }
     } catch (error: any) {
       console.error('Leave submission error:', error);
+
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: error.message || 'Failed to submit leave request',
+        text2:
+          error?.response?.data?.message ||
+          error.message ||
+          'Failed to submit leave request',
       });
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-IN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
   };
 
   const getStatusColor = (status: string) => {
@@ -163,18 +176,21 @@ export const LeaveScreen: React.FC = () => {
     }
   };
 
-  const renderLeaveHistoryItem = ({ item }: ListRenderItemInfo<LeaveRequest>) => (
+  const renderLeaveHistoryItem = ({item}: ListRenderItemInfo<LeaveRequest>) => (
     <View style={styles.historyCard}>
       <View style={styles.historyHeader}>
         <View>
           <Text style={styles.historyDates}>
-            {formatDate(new Date(item.from_date))} - {formatDate(new Date(item.to_date))}
+            {formatDate(new Date(item.from_date))} -{' '}
+            {formatDate(new Date(item.to_date))}
           </Text>
           <Text style={styles.historyLeaveType}>{item.leave_type}</Text>
         </View>
         <View
-          style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}
-        >
+          style={[
+            styles.statusBadge,
+            {backgroundColor: getStatusColor(item.status)},
+          ]}>
           <Text style={styles.statusBadgeText}>{item.status}</Text>
         </View>
       </View>
@@ -185,13 +201,11 @@ export const LeaveScreen: React.FC = () => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
+      style={styles.container}>
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
+        keyboardShouldPersistTaps="handled">
         {/* Leave Request Form */}
         <View style={styles.formCard}>
           <Text style={styles.formTitle}>Create Leave Request</Text>
@@ -201,8 +215,7 @@ export const LeaveScreen: React.FC = () => {
             <Text style={styles.fieldLabel}>From Date</Text>
             <TouchableOpacity
               style={styles.dateInput}
-              onPress={() => setShowFromDatePicker(true)}
-            >
+              onPress={() => setShowFromDatePicker(true)}>
               <Icon name="calendar" size={20} color="#0066cc" />
               <Text style={styles.dateText}>{formatDate(fromDate)}</Text>
             </TouchableOpacity>
@@ -210,8 +223,14 @@ export const LeaveScreen: React.FC = () => {
               <DateTimePicker
                 value={fromDate}
                 mode="date"
-                display="spinner"
-                onChange={(event, date) => date && handleFromDateChange(date)}
+                display="default"
+                onChange={(_, selectedDate) => {
+                  setShowFromDatePicker(false);
+
+                  if (selectedDate) {
+                    setFromDate(selectedDate);
+                  }
+                }}
               />
             )}
           </View>
@@ -221,8 +240,7 @@ export const LeaveScreen: React.FC = () => {
             <Text style={styles.fieldLabel}>To Date</Text>
             <TouchableOpacity
               style={styles.dateInput}
-              onPress={() => setShowToDatePicker(true)}
-            >
+              onPress={() => setShowToDatePicker(true)}>
               <Icon name="calendar" size={20} color="#0066cc" />
               <Text style={styles.dateText}>{formatDate(toDate)}</Text>
             </TouchableOpacity>
@@ -230,8 +248,14 @@ export const LeaveScreen: React.FC = () => {
               <DateTimePicker
                 value={toDate}
                 mode="date"
-                display="spinner"
-                onChange={(event, date) => date && handleToDateChange(date)}
+                display="default"
+                onChange={(event, selectedDate) => {
+                  setShowToDatePicker(false);
+
+                  if (selectedDate) {
+                    setToDate(selectedDate);
+                  }
+                }}
               />
             )}
           </View>
@@ -241,8 +265,7 @@ export const LeaveScreen: React.FC = () => {
             <Text style={styles.fieldLabel}>Leave Type</Text>
             <TouchableOpacity
               style={styles.selectInput}
-              onPress={() => setShowLeaveTypeMenu(!showLeaveTypeMenu)}
-            >
+              onPress={() => setShowLeaveTypeMenu(!showLeaveTypeMenu)}>
               <Text style={styles.selectText}>{leaveType}</Text>
               <Icon
                 name={showLeaveTypeMenu ? 'chevron-up' : 'chevron-down'}
@@ -253,7 +276,7 @@ export const LeaveScreen: React.FC = () => {
 
             {showLeaveTypeMenu && (
               <View style={styles.dropdown}>
-                {leaveTypes.map((type) => (
+                {leaveTypes.map(type => (
                   <TouchableOpacity
                     key={type}
                     style={[
@@ -263,14 +286,12 @@ export const LeaveScreen: React.FC = () => {
                     onPress={() => {
                       setLeaveType(type);
                       setShowLeaveTypeMenu(false);
-                    }}
-                  >
+                    }}>
                     <Text
                       style={[
                         styles.dropdownItemText,
                         type === leaveType && styles.dropdownItemTextSelected,
-                      ]}
-                    >
+                      ]}>
                       {type}
                     </Text>
                     {type === leaveType && (
@@ -326,7 +347,7 @@ export const LeaveScreen: React.FC = () => {
             <FlatList
               data={leaveHistory}
               renderItem={renderLeaveHistoryItem}
-              keyExtractor={(item) => item.id}
+              keyExtractor={item => item.id.toString()}
               scrollEnabled={false}
               ItemSeparatorComponent={() => <View style={styles.separator} />}
             />
@@ -352,7 +373,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 2,
@@ -416,7 +437,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     zIndex: 100,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
@@ -487,7 +508,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 2,

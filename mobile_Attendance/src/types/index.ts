@@ -70,3 +70,26 @@ export interface CheckInPayload {
     appVersion: string;
   };
 }
+
+export type LeaveType = 'CASUAL' | 'SICK' | 'EARNED' | 'UNPAID' | 'MATERNITY';
+
+export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface LeaveRequest {
+  id: string;
+  employee_id: string;
+  from_date: string;
+  to_date: string;
+  leave_type: LeaveType;
+  reason: string;
+  status: LeaveStatus;
+  approved_by?: string | null;
+  created_at?: string;
+  updated_at?: string;
+
+  employee?: {
+    id: string;
+    name: string;
+    employee_code: string;
+  };
+}
