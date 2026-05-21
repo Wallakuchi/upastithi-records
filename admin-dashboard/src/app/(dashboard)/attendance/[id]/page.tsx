@@ -111,8 +111,8 @@ export default function AttendanceDetailPage() {
             latitude={record.check_in_lat}
             longitude={record.check_in_lng}
             title="Check-in Location"
-            officeLatitude={28.6139}
-            officeLongitude={77.209}
+            officeLatitude={28.553306}
+            officeLongitude={77.204705}
             officeAddress="Office Headquarters"
           />
         </div>
@@ -124,8 +124,8 @@ export default function AttendanceDetailPage() {
             latitude={record.check_out_lat}
             longitude={record.check_out_lng}
             title="Check-out Location"
-            officeLatitude={28.6139}
-            officeLongitude={77.209}
+            officeLatitude={28.553306}
+            officeLongitude={77.204705}
             officeAddress="Office Headquarters"
           />
         </div>

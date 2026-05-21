@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { formatTime } from '../utils/helpers';
 
 export interface AttendanceCardProps {
   checkInTime?: string;
@@ -63,19 +64,19 @@ export const AttendanceCard: React.FC<AttendanceCardProps> = ({
     }
   };
 
-  const formatTime = (time?: string): string => {
-    if (!time) return 'N/A';
-    try {
-      const date = new Date(time);
-      return date.toLocaleTimeString('en-IN', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      });
-    } catch {
-      return time;
-    }
-  };
+  // const formatTime = (time?: string): string => {
+  //   if (!time) return 'N/A';
+  //   try {
+  //     const date = new Date(time);
+  //     return date.toLocaleTimeString('en-IN', {
+  //       hour: '2-digit',
+  //       minute: '2-digit',
+  //       second: '2-digit',
+  //     });
+  //   } catch {
+  //     return time;
+  //   }
+  // };
 
   const formatCoordinates = (lat?: number, lng?: number): string => {
     if (lat === undefined || lng === undefined) return 'N/A';

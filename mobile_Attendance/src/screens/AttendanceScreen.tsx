@@ -73,6 +73,52 @@ export const AttendanceScreen: React.FC = () => {
   const isCheckIn = type === 'check-in';
 
   useEffect(() => {
+    // Reset screen state whenever type changes
+    setWorkflowStarted(false);
+    setWorkflowComplete(false);
+    setCameraVisible(false);
+
+    setLocation(null);
+    setIsWithinRadius(null);
+    setSelfieUri(null);
+
+    locationRef.current = null;
+
+    setSteps([
+      {
+        id: 'permission',
+        label: 'Location Permission',
+        completed: false,
+        loading: false,
+      },
+      {
+        id: 'location',
+        label: 'Getting Location',
+        completed: false,
+        loading: false,
+      },
+      {
+        id: 'radius',
+        label: 'Verifying Office Radius',
+        completed: false,
+        loading: false,
+      },
+      {
+        id: 'camera',
+        label: 'Capturing Selfie',
+        completed: false,
+        loading: false,
+      },
+      {
+        id: 'upload',
+        label: 'Uploading',
+        completed: false,
+        loading: false,
+      },
+    ]);
+  }, [type]);
+
+  useEffect(() => {
     // Initialize workflow service on mount
     AttendanceWorkflowService.initialize().catch(err => {
       console.error('Failed to initialize workflow service:', err);
@@ -240,7 +286,10 @@ export const AttendanceScreen: React.FC = () => {
         });
 
         setTimeout(() => {
-          navigation.goBack();
+          navigation.reset({
+            index: 0,
+            routes: [{name: 'Home'}],
+          });
         }, 2000);
       } else {
         updateStep('upload', {loading: false, error: completeResult.error});

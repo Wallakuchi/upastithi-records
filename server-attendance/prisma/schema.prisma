@@ -87,8 +87,8 @@ model LeaveRequest {
 model OfficeSettings {
   id                String   @id @default(cuid())
   office_name       String   @default("Company Office")
-  office_latitude   Float    @default(28.6139)
-  office_longitude  Float    @default(77.2090)
+  office_latitude   Float    @default(28.553306)
+  office_longitude  Float    @default(77.2047050)
   allowed_radius    Int      @default(500) // in meters
   office_start_time String   @default("09:00")
   office_end_time   String   @default("18:00")

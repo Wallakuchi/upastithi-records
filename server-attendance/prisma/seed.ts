@@ -140,10 +140,10 @@ async function main() {
         attendance_date: today,
         check_in_time: new Date(today.getTime() + 9 * 60 * 60 * 1000), // 9:00 AM
         check_out_time: new Date(today.getTime() + 18 * 60 * 60 * 1000), // 6:00 PM
-        check_in_lat: 28.6139,
-        check_in_lng: 77.209,
-        check_out_lat: 28.6139,
-        check_out_lng: 77.209,
+        check_in_lat: 28.553306,
+        check_in_lng: 77.204705,
+        check_out_lat: 28.553306,
+        check_out_lng: 77.204705,
         attendance_status: 'PRESENT',
       },
     });
@@ -161,8 +161,8 @@ async function main() {
         attendance_date: today,
         check_in_time: new Date(today.getTime() + 9.5 * 60 * 60 * 1000), // 9:30 AM
         check_out_time: new Date(today.getTime() + 17.5 * 60 * 60 * 1000), // 5:30 PM
-        check_in_lat: 28.6139,
-        check_in_lng: 77.209,
+        check_in_lat: 28.553306,
+        check_in_lng: 77.204705,
         attendance_status: 'LATE',
       },
     });

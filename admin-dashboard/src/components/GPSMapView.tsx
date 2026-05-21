@@ -16,8 +16,8 @@ export function GPSMapView({
   latitude,
   longitude,
   title = 'Location Map',
-  officeLatitude = 28.6139, // Default office location (Delhi, India)
-  officeLongitude = 77.209,
+  officeLatitude = 28.553306, // Default office location (Delhi, India)
+  officeLongitude = 77.204705,
   officeAddress = 'Office',
 }: GPSMapViewProps) {
   const [distance, setDistance] = useState<number | null>(null)

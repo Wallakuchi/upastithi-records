@@ -24,8 +24,8 @@ router.get(
         settings = await prisma.officeSettings.create({
           data: {
             office_name: process.env.OFFICE_NAME || 'Company Office',
-            office_latitude: parseFloat(process.env.OFFICE_LATITUDE || '28.6139'),
-            office_longitude: parseFloat(process.env.OFFICE_LONGITUDE || '77.2090'),
+            office_latitude: parseFloat(process.env.OFFICE_LATITUDE || '28.553306'),
+            office_longitude: parseFloat(process.env.OFFICE_LONGITUDE || '77.2047050'),
             allowed_radius: parseInt(process.env.OFFICE_RADIUS || '500'),
             office_start_time: process.env.OFFICE_START_TIME || '09:00',
             office_end_time: process.env.OFFICE_END_TIME || '18:00',
@@ -83,8 +83,8 @@ router.put(
         settings = await prisma.officeSettings.create({
           data: {
             office_name: office_name || 'Company Office',
-            office_latitude: office_latitude || 28.6139,
-            office_longitude: office_longitude || 77.2090,
+            office_latitude: office_latitude || 28.553306,
+            office_longitude: office_longitude || 77.2047050,
             allowed_radius: allowed_radius || 500,
             office_start_time: office_start_time || '09:00',
             office_end_time: office_end_time || '18:00',

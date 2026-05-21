@@ -50,27 +50,64 @@ router.post(
  * GET /api/attendance/history
  * Get attendance history for employee
  */
+// router.get(
+//   '/history',
+//   authenticateToken,
+//   validateQuery(historyQuerySchema),
+//   catchAsync(async (req: any, res: Response) => {
+//     try {
+//       const { employee_id, from_date, to_date, page, limit } = req.query;
+
+//       const result = await AttendanceService.getHistory(
+//         employee_id,
+//         from_date ? new Date(from_date) : undefined,
+//         to_date ? new Date(to_date) : undefined,
+//         page,
+//         limit
+//       );
+
+//       sendPaginated(res, result.records, result.total, result.page, result.limit);
+//     } catch (error: any) {
+//       sendError(res, 400, error.message);
+//     }
+//   })
+// );
+
 router.get(
   '/history',
   authenticateToken,
   validateQuery(historyQuerySchema),
   catchAsync(async (req: any, res: Response) => {
     try {
-      const { employee_id, from_date, to_date, page, limit } = req.query;
+      const {
+        employee_id,
+        from_date,
+        to_date,
+        page = '1',
+        limit = '20',
+      } = req.query;
 
       const result = await AttendanceService.getHistory(
         employee_id,
         from_date ? new Date(from_date) : undefined,
         to_date ? new Date(to_date) : undefined,
-        page,
-        limit
+        Number(page),
+        Number(limit),
       );
 
-      sendPaginated(res, result.records, result.total, result.page, result.limit);
+      sendPaginated(
+        res,
+        result.records,
+        result.total,
+        result.page,
+        result.limit,
+      );
     } catch (error: any) {
+      console.error('HISTORY API ERROR =>', error);
+
       sendError(res, 400, error.message);
     }
-  })
+  }),
 );
 
 /**

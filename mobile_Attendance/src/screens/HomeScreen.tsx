@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -8,47 +8,57 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation } from '@react-navigation/native';
-import { useAuthStore } from '../store/authStore';
-import { attendanceApi } from '../api/endpoints';
-import { AttendanceRecord } from '../types/index';
-import { Button } from '../components/Button';
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
+import {useAuthStore} from '../store/authStore';
+import {attendanceApi} from '../api/endpoints';
+import {AttendanceRecord} from '../types/index';
+import {Button} from '../components/Button';
 import Toast from 'react-native-toast-message';
+import { formatTime, getStatusColor, getStatusLabel } from '../utils/helpers';
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<any>();
-  const { user } = useAuthStore();
-  const [todayAttendance, setTodayAttendance] = useState<AttendanceRecord | null>(null);
+  const {user} = useAuthStore();
+  const [todayAttendance, setTodayAttendance] =
+    useState<AttendanceRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [currentTime, setCurrentTime] = useState<string>(new Date().toLocaleTimeString());
+  const [currentTime, setCurrentTime] = useState<string>(
+    new Date().toLocaleTimeString(),
+  );
   const [currentDate, setCurrentDate] = useState<string>(
     new Date().toLocaleDateString('en-IN', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric',
-    })
+    }),
   );
 
+  // Live clock
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date().toLocaleTimeString());
     }, 1000);
+
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    fetchTodayAttendance();
-  }, []);
-
-  const fetchTodayAttendance = async () => {
+  // Fetch today's attendance
+  const fetchTodayAttendance = async (showLoader = true) => {
     if (!user?.id) return;
 
     try {
-      setLoading(true);
+      if (showLoader) {
+        setLoading(true);
+      }
+
       const response = await attendanceApi.getToday();
-      console.log('attendance api res: ', response);
+
+      console.log(
+        'TODAY ATTENDANCE API =>',
+        JSON.stringify(response?.data, null, 2),
+      );
 
       if (response?.data?.data) {
         setTodayAttendance(response.data.data);
@@ -57,19 +67,34 @@ export const HomeScreen: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to fetch today attendance:', error);
+
       Toast.show({
         type: 'error',
         text1: 'Error',
         text2: 'Failed to load attendance data',
       });
     } finally {
-      setLoading(false);
+      if (showLoader) {
+        setLoading(false);
+      }
     }
   };
 
+  // Refresh whenever screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchTodayAttendance(false);
+    }, []),
+  );
+
+  // Initial load
+  useEffect(() => {
+    fetchTodayAttendance();
+  }, []);
+
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchTodayAttendance();
+    await fetchTodayAttendance(false);
     setRefreshing(false);
   };
 
@@ -82,7 +107,7 @@ export const HomeScreen: React.FC = () => {
       });
       return;
     }
-    navigation.navigate('Attendance', { type: 'check-in' });
+    navigation.navigate('Attendance', {type: 'check-in'});
   };
 
   const handleCheckOut = () => {
@@ -102,56 +127,15 @@ export const HomeScreen: React.FC = () => {
       });
       return;
     }
-    navigation.navigate('Attendance', { type: 'check-out' });
-  };
-
-  const getStatusColor = (status?: string) => {
-    switch (status) {
-      case 'present':
-        return '#44bb44';
-      case 'late':
-        return '#ff9800';
-      case 'absent':
-        return '#ff4444';
-      case 'outside_office':
-        return '#ff6b6b';
-      default:
-        return '#999999';
-    }
-  };
-
-  const getStatusLabel = (status?: string) => {
-    switch (status) {
-      case 'present':
-        return 'Present';
-      case 'late':
-        return 'Late';
-      case 'absent':
-        return 'Absent';
-      case 'outside_office':
-        return 'Outside Office';
-      default:
-        return 'Not Marked';
-    }
-  };
-
-  const formatTime = (timeString?: string) => {
-    if (!timeString) return '--:--';
-    try {
-      return new Date(`2000-01-01 ${timeString}`).toLocaleTimeString('en-IN', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } catch {
-      return timeString;
-    }
+    navigation.navigate('Attendance', {type: 'check-out'});
   };
 
   return (
     <ScrollView
       style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-    >
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }>
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>Welcome back,</Text>
@@ -187,7 +171,9 @@ export const HomeScreen: React.FC = () => {
           onPress={handleCheckOut}
           variant="secondary"
           size="large"
-          disabled={!todayAttendance?.check_in_time || !!todayAttendance?.check_out_time}
+          disabled={
+            !todayAttendance?.check_in_time || !!todayAttendance?.check_out_time
+          }
           style={styles.checkOutButton}
         />
       </View>
@@ -203,9 +189,12 @@ export const HomeScreen: React.FC = () => {
             <View
               style={[
                 styles.statusBadge,
-                { backgroundColor: getStatusColor(todayAttendance.attendance_status) },
-              ]}
-            >
+                {
+                  backgroundColor: getStatusColor(
+                    todayAttendance.attendance_status,
+                  ),
+                },
+              ]}>
               <Text style={styles.statusText}>
                 {getStatusLabel(todayAttendance.attendance_status)}
               </Text>
@@ -248,7 +237,9 @@ export const HomeScreen: React.FC = () => {
         <View style={styles.noDataCard}>
           <Icon name="calendar-blank" size={48} color="#ccc" />
           <Text style={styles.noDataText}>No attendance marked today</Text>
-          <Text style={styles.noDataSubtext}>Tap Check IN to start your day</Text>
+          <Text style={styles.noDataSubtext}>
+            Tap Check IN to start your day
+          </Text>
         </View>
       )}
 
@@ -308,7 +299,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 3,
@@ -368,7 +359,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 3,
@@ -448,7 +439,7 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 3,
@@ -485,7 +476,7 @@ const styles = StyleSheet.create({
     padding: 12,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 2,

@@ -15,3 +15,10 @@ export const PERMISSIONS = {
   LOCATION: 'android.permission.ACCESS_FINE_LOCATION',
   STORAGE: 'android.permission.READ_EXTERNAL_STORAGE',
 };
+
+export const ATTENDANCE_STATUS = {
+  PRESENT: "PRESENT",
+  ABSENT: "ABSENT",
+  LATE: "LATE",
+  OUTSIDE_OFFICE: "OUTSIDE_OFFICE"
+}

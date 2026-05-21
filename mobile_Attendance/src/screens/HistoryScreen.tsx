@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, {useEffect, useState, useCallback} from 'react';
 import {
   View,
   Text,
@@ -11,16 +11,17 @@ import {
   ListRenderItemInfo,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useAuthStore } from '../store/authStore';
-import { attendanceApi } from '../api/endpoints';
-import { AttendanceRecord } from '../types/index';
+import {useAuthStore} from '../store/authStore';
+import {attendanceApi} from '../api/endpoints';
+import {AttendanceRecord} from '../types/index';
 import Toast from 'react-native-toast-message';
+import { formatTime, getStatusColor, getStatusLabel } from '../utils/helpers';
 
 /**
  * HistoryScreen - Display attendance history with pull-to-refresh and infinite scroll
  */
 export const HistoryScreen: React.FC = () => {
-  const { user } = useAuthStore();
+  const {user} = useAuthStore();
 
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,27 +44,41 @@ export const HistoryScreen: React.FC = () => {
         setLoadingMore(true);
       }
 
-      const response = await attendanceApi.getHistory(undefined, undefined, pageNum, 20);
+      const response = await attendanceApi.getHistory(
+        user.id,
+        undefined,
+        undefined,
+        pageNum,
+        20,
+      );
 
-      if (response?.data) {
-        const newRecords = Array.isArray(response.data) ? response.data : response.data.data || [];
+      console.log(
+        'HISTORY RESPONSE =>',
+        JSON.stringify(response.data, null, 2),
+      );
 
-        if (append) {
-          setRecords((prev) => [...prev, ...newRecords]);
-        } else {
-          setRecords(newRecords);
-        }
+      const responseData = response?.data;
 
-        setPage(pageNum);
-        setHasMore(newRecords.length === 20);
+      const newRecords = responseData?.data || [];
+
+      if (append) {
+        setRecords(prev => [...prev, ...newRecords]);
       } else {
-        if (!append) {
-          setRecords([]);
-        }
-        setHasMore(false);
+        setRecords(newRecords);
       }
-    } catch (error) {
-      console.error('Failed to fetch history:', error);
+
+      setPage(pageNum);
+
+      // pagination
+      const totalPages = responseData?.pagination?.totalPages || 1;
+
+      setHasMore(pageNum < totalPages);
+    } catch (error: any) {
+      console.log(
+        'HISTORY ERROR =>',
+        JSON.stringify(error.response?.data, null, 2),
+      );
+
       Toast.show({
         type: 'error',
         text1: 'Error',
@@ -94,47 +109,35 @@ export const HistoryScreen: React.FC = () => {
     }
   }, [page, hasMore, loadingMore, loading]);
 
-  const getStatusColor = (status?: string) => {
-    switch (status) {
-      case 'present':
-        return '#44bb44';
-      case 'late':
-        return '#ff9800';
-      case 'absent':
-        return '#ff4444';
-      case 'outside_office':
-        return '#ff6b6b';
-      default:
-        return '#999999';
-    }
-  };
+  // const getStatusColor = (status?: string) => {
+  //   switch (status) {
+  //     case ATTENDANCE_STATUS.PRESENT:
+  //       return '#44bb44';
+  //     case ATTENDANCE_STATUS.LATE:
+  //       return '#ff9800';
+  //     case ATTENDANCE_STATUS.ABSENT:
+  //       return '#ff4444';
+  //     case ATTENDANCE_STATUS.OUTSIDE_OFFICE:
+  //       return '#ff6b6b';
+  //     default:
+  //       return '#999999';
+  //   }
+  // };
 
-  const getStatusLabel = (status?: string) => {
-    switch (status) {
-      case 'present':
-        return 'Present';
-      case 'late':
-        return 'Late';
-      case 'absent':
-        return 'Absent';
-      case 'outside_office':
-        return 'Outside Office';
-      default:
-        return 'Not Marked';
-    }
-  };
-
-  const formatTime = (timeString?: string) => {
-    if (!timeString) return '--:--';
-    try {
-      return new Date(`2000-01-01 ${timeString}`).toLocaleTimeString('en-IN', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } catch {
-      return timeString;
-    }
-  };
+  // const getStatusLabel = (status?: string) => {
+  //   switch (status) {
+  //     case ATTENDANCE_STATUS.PRESENT:
+  //       return 'Present';
+  //     case ATTENDANCE_STATUS.LATE:
+  //       return 'Late';
+  //     case ATTENDANCE_STATUS.ABSENT:
+  //       return 'Absent';
+  //     case ATTENDANCE_STATUS.OUTSIDE_OFFICE:
+  //       return 'Outside Office';
+  //     default:
+  //       return 'Not Marked';
+  //   }
+  // };
 
   const formatDate = (dateString: string) => {
     try {
@@ -150,18 +153,21 @@ export const HistoryScreen: React.FC = () => {
     }
   };
 
-  const renderAttendanceItem = ({ item }: ListRenderItemInfo<AttendanceRecord>) => (
+  const renderAttendanceItem = ({
+    item,
+  }: ListRenderItemInfo<AttendanceRecord>) => (
     <TouchableOpacity style={styles.recordCard} activeOpacity={0.7}>
       <View style={styles.recordHeader}>
         <View>
-          <Text style={styles.dateText}>{formatDate(item.attendance_date)}</Text>
+          <Text style={styles.dateText}>
+            {formatDate(item.attendance_date)}
+          </Text>
           <View style={styles.statusBadgeContainer}>
             <View
               style={[
                 styles.statusBadge,
-                { backgroundColor: getStatusColor(item.attendance_status) },
-              ]}
-            >
+                {backgroundColor: getStatusColor(item.attendance_status)},
+              ]}>
               <Text style={styles.statusBadgeText}>
                 {getStatusLabel(item.attendance_status)}
               </Text>
@@ -175,7 +181,9 @@ export const HistoryScreen: React.FC = () => {
           <Icon name="login" size={16} color="#0066cc" />
           <View style={styles.detailInfo}>
             <Text style={styles.detailLabel}>Check-In</Text>
-            <Text style={styles.detailValue}>{formatTime(item.check_in_time)}</Text>
+            <Text style={styles.detailValue}>
+              {formatTime(item.check_in_time)}
+            </Text>
           </View>
         </View>
 
@@ -183,7 +191,9 @@ export const HistoryScreen: React.FC = () => {
           <Icon name="logout" size={16} color="#ff6b6b" />
           <View style={styles.detailInfo}>
             <Text style={styles.detailLabel}>Check-Out</Text>
-            <Text style={styles.detailValue}>{formatTime(item.check_out_time)}</Text>
+            <Text style={styles.detailValue}>
+              {formatTime(item.check_out_time)}
+            </Text>
           </View>
         </View>
       </View>
@@ -222,12 +232,15 @@ export const HistoryScreen: React.FC = () => {
       {records.length === 0 ? (
         <ScrollView
           style={styles.emptyContainer}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          contentContainerStyle={styles.emptyContent}
-        >
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          contentContainerStyle={styles.emptyContent}>
           <Icon name="calendar-blank" size={64} color="#ccc" />
           <Text style={styles.emptyText}>No attendance records yet</Text>
-          <Text style={styles.emptySubtext}>Your attendance history will appear here</Text>
+          <Text style={styles.emptySubtext}>
+            Your attendance history will appear here
+          </Text>
         </ScrollView>
       ) : (
         <FlatList
@@ -239,7 +252,9 @@ export const HistoryScreen: React.FC = () => {
           onEndReached={onLoadMore}
           onEndReachedThreshold={0.3}
           ListFooterComponent={renderFooter}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
           showsVerticalScrollIndicator={false}
         />
       )}
@@ -290,7 +305,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     padding: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 2,
