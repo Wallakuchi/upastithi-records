@@ -4,14 +4,30 @@ import { useEffect, useState } from 'react'
 import { leaveApi } from '@/lib/api'
 import { Eye, Check, X } from 'lucide-react'
 
-interface LeaveRequest {
-  id: string
-  employee_name: string
-  from_date: string
-  to_date: string
-  leave_type: string
-  status: string
-  reason?: string
+export interface LeaveRequest {
+  id: string;
+
+  employee_id: string;
+
+  from_date: string;
+  to_date: string;
+
+  leave_type: string;
+
+  reason: string;
+
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+
+  approved_by?: string | null;
+
+  created_at: string;
+  updated_at: string;
+
+  employee?: {
+    id: string;
+    name: string;
+    employee_code: string;
+  };
 }
 
 export default function LeaveRequestsPage() {
@@ -132,7 +148,7 @@ export default function LeaveRequestsPage() {
             {leaves.length > 0 ? (
               leaves.map((leave) => (
                 <tr key={leave.id} className="hover:bg-slate-50">
-                  <td className="px-6 py-4 text-slate-900">{leave.employee_name}</td>
+                  <td className="px-6 py-4 text-slate-900">{leave.employee?.name || '-'}</td>
                   <td className="px-6 py-4 text-slate-600">
                     {new Date(leave.from_date).toDateString()}
                   </td>
