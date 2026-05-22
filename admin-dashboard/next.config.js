@@ -11,6 +11,11 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    outputFileTracingIncludes: {
+      '/(dashboard)': ['./src/app/(dashboard)/**/*'],
+    },
+  },
   typescript: {
   ignoreBuildErrors: true,
 },
