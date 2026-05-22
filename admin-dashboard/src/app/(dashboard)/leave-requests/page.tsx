@@ -132,7 +132,7 @@ export default function LeaveRequestsPage() {
             {leaves.length > 0 ? (
               leaves.map((leave) => (
                 <tr key={leave.id} className="hover:bg-slate-50">
-                  <td className="px-6 py-4 text-slate-900">{leave.employee.name}</td>
+                  <td className="px-6 py-4 text-slate-900">{leave.employee_name}</td>
                   <td className="px-6 py-4 text-slate-600">
                     {new Date(leave.from_date).toDateString()}
                   </td>
