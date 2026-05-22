@@ -33,22 +33,45 @@ apiClient.interceptors.response.use(
 )
 
 export const attendanceApi = {
-  getReport: async (fromDate: string, toDate: string, page?: number, limit?: number) => {
-    try {
-      const params = new URLSearchParams()
-      params.append('from_date', fromDate)
-      params.append('to_date', toDate)
-      if (page) params.append('page', page.toString())
-      if (limit) params.append('limit', limit.toString())
+  // getReport: async (fromDate: string, toDate: string, page?: number, limit?: number) => {
+  //   try {
+  //     const params = new URLSearchParams()
+  //     params.append('from_date', fromDate)
+  //     params.append('to_date', toDate)
+  //     if (page) params.append('page', page.toString())
+  //     if (limit) params.append('limit', limit.toString())
 
-      const response = await apiClient.get(`/attendance/report?${params.toString()}`)
-      return response
+  //     const response = await apiClient.get(`/attendance/report?${params.toString()}`)
+  //     return response
+  //   } catch (error) {
+  //     console.error('Error fetching attendance report:', error)
+  //     throw error
+  //   }
+  // },
+
+  getReport: async (
+    fromDate: string,
+    toDate: string,
+    page?: number,
+    limit?: number,
+  ) => {
+    try {
+      const response = await apiClient.get('/attendance/report', {
+        params: {
+          from_date: fromDate,
+          to_date: toDate,
+          page: page || 1,
+          limit: limit || 20,
+        },
+      });
+
+      return response;
     } catch (error) {
-      console.error('Error fetching attendance report:', error)
-      throw error
+      console.error('Error fetching attendance report:', error);
+      throw error;
     }
   },
-
+  
   getAttendanceById: async (id: string) => {
     try {
       const response = await apiClient.get(`/attendance/${id}`)

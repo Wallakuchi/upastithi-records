@@ -138,32 +138,95 @@ router.get(
  * GET /api/attendance/report
  * Get attendance report (Admin/HR only)
  */
+// router.get(
+//   '/report',
+//   authenticateToken,
+//   validateQuery(reportQuerySchema),
+//   catchAsync(async (req: any, res: Response) => {
+//     try {
+//       const { from_date, to_date, department, page, limit } = req.query;
+
+//       // Verify user is admin or hr
+//       if (!['ADMIN', 'HR'].includes(req.user.role)) {
+//         return sendError(res, 403, 'Insufficient permissions');
+//       }
+
+//       const result = await AttendanceService.getReport(
+//         new Date(from_date),
+//         new Date(to_date),
+//         department,
+//         page,
+//         limit
+//       );
+//       console.log('result :', result)
+
+//       sendPaginated(res, result.records, result.total, result.page, result.limit);
+//     } catch (error: any) {
+//       sendError(res, 400, error.message);
+//     }
+//   })
+// );
+
 router.get(
   '/report',
   authenticateToken,
   validateQuery(reportQuerySchema),
   catchAsync(async (req: any, res: Response) => {
     try {
-      const { from_date, to_date, department, page, limit } = req.query;
+      const {from_date, to_date, department} = req.query;
 
       // Verify user is admin or hr
       if (!['ADMIN', 'HR'].includes(req.user.role)) {
         return sendError(res, 403, 'Insufficient permissions');
       }
 
+      // DATE RANGE FIX
+      const fromDate = new Date(from_date);
+      fromDate.setHours(0, 0, 0, 0);
+
+      const toDate = new Date(to_date);
+      toDate.setHours(23, 59, 59, 999);
+
+      // PAGINATION FIX
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 20;
+
       const result = await AttendanceService.getReport(
-        new Date(from_date),
-        new Date(to_date),
+        fromDate,
+        toDate,
         department,
         page,
-        limit
+        limit,
       );
 
-      sendPaginated(res, result.records, result.total, result.page, result.limit);
+      // sendPaginated(
+      //   res,
+      //   result.records,
+      //   result.total,
+      //   result.page,
+      //   result.limit,
+      // );
+      return res.status(200).json({
+  success: true,
+  totalEmployees: result.totalEmployees,
+  present: result.present,
+  absent: result.absent,
+  late: result.late,
+  outside_office: result.outside_office,
+  records: result.records,
+  pagination: {
+    total: result.total,
+    page: result.page,
+    limit: result.limit,
+    totalPages: result.totalPages,
+  },
+});
     } catch (error: any) {
+      console.error('Attendance report error:', error);
+
       sendError(res, 400, error.message);
     }
-  })
+  }),
 );
 
 export default router;

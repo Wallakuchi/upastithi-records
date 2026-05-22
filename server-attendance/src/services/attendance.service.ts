@@ -271,49 +271,142 @@ export class AttendanceService {
   /**
    * Get attendance report
    */
-  static async getReport(startDate: Date, endDate: Date, department?: string, page = 1, limit = 20) {
-    const skip = (page - 1) * limit;
+  // static async getReport(startDate: Date, endDate: Date, department?: string, page = 1, limit = 20) {
+  //   const skip = (page - 1) * limit;
 
-    const where: any = {
-      attendance_date: {
-        gte: startDate,
-        lte: endDate,
-      },
-    };
+  //   const where: any = {
+  //     attendance_date: {
+  //       gte: startDate,
+  //       lte: endDate,
+  //     },
+  //   };
 
-    if (department) {
-      where.employee = {
-        department,
-      };
-    }
+  //   if (department) {
+  //     where.employee = {
+  //       department,
+  //     };
+  //   }
 
-    const [records, total] = await Promise.all([
-      prisma.attendance.findMany({
-        where,
-        include: {
-          employee: {
-            select: {
-              id: true,
-              employee_code: true,
-              name: true,
-              designation: true,
-              department: true,
-            },
-          },
-        },
-        skip,
-        take: limit,
-        orderBy: { attendance_date: 'desc' },
-      }),
-      prisma.attendance.count({ where }),
-    ]);
+  //   const [records, total] = await Promise.all([
+  //     prisma.attendance.findMany({
+  //       where,
+  //       include: {
+  //         employee: {
+  //           select: {
+  //             id: true,
+  //             employee_code: true,
+  //             name: true,
+  //             designation: true,
+  //             department: true,
+  //           },
+  //         },
+  //       },
+  //       skip,
+  //       take: limit,
+  //       orderBy: { attendance_date: 'desc' },
+  //     }),
+  //     prisma.attendance.count({ where }),
+  //   ]);
 
-    return {
-      records,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+  //   return {
+  //     records,
+  //     total,
+  //     page,
+  //     limit,
+  //     totalPages: Math.ceil(total / limit),
+  //   };
+  // }
+
+  static async getReport(
+  startDate: Date,
+  endDate: Date,
+  department?: string,
+  page = 1,
+  limit = 20,
+) {
+  const skip = (page - 1) * limit;
+
+  const where: any = {
+    attendance_date: {
+      gte: startDate,
+      lte: endDate,
+    },
+  };
+
+  if (department) {
+    where.employee = {
+      department,
     };
   }
+
+  // TOTAL EMPLOYEES
+  const totalEmployees = await prisma.employee.count({
+    where: department ? { department } : {},
+  });
+
+  // PRESENT
+ const present = await prisma.attendance.count({
+  where: {
+    ...where,
+    attendance_status: 'PRESENT',
+  },
+});;
+
+  // LATE
+const late = await prisma.attendance.count({
+  where: {
+    ...where,
+    attendance_status: 'LATE',
+  },
+});
+
+  // OUTSIDE OFFICE
+const outside_office = await prisma.attendance.count({
+  where: {
+    ...where,
+    attendance_status: 'OUTSIDE_OFFICE',
+  },
+});
+
+  // ABSENT
+  const absent = totalEmployees - present;
+
+  // RECORDS
+  const [records, total] = await Promise.all([
+    prisma.attendance.findMany({
+      where,
+      include: {
+        employee: {
+          select: {
+            id: true,
+            employee_code: true,
+            name: true,
+            designation: true,
+            department: true,
+          },
+        },
+      },
+      skip,
+      take: limit,
+      orderBy: {
+        attendance_date: 'desc',
+      },
+    }),
+
+    prisma.attendance.count({ where }),
+  ]);
+
+  return {
+    totalEmployees,
+    present,
+    absent,
+    late,
+    outside_office,
+    records,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
+}
 }
