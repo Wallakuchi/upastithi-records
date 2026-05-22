@@ -2,6 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  output: 'standalone',
   images: {
     unoptimized: true,
   },
@@ -10,11 +11,6 @@ const nextConfig = {
   },
   eslint: {
     ignoreDuringBuilds: true,
-  },
-  experimental: {
-    outputFileTracingIncludes: {
-      '/(dashboard)': ['./src/app/(dashboard)/**/*'],
-    },
   },
   typescript: {
   ignoreBuildErrors: true,
