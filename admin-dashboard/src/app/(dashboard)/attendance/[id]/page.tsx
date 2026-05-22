@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { apiClient } from '@/lib/api'
 import { GPSMapView } from '@/components/GPSMapView'
 import { ImagePreviewModal } from '@/components/ImagePreviewModal'
