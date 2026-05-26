@@ -302,12 +302,13 @@ export const AttendanceScreen: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Selfie capture error:', error);
-      updateStep('camera', {loading: false, error: error.message});
-      updateStep('upload', {loading: false, error: error.message});
+      const errorMsg = error?.message || error?.response?.data?.error?.message || 'Failed to process selfie';
+      updateStep('camera', {loading: false, error: errorMsg});
+      updateStep('upload', {loading: false, error: errorMsg});
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: error.message || 'Failed to process selfie',
+        text1: 'Upload Failed',
+        text2: errorMsg,
       });
       setWorkflowStarted(false);
     }

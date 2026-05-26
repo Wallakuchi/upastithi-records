@@ -25,19 +25,33 @@ export class CloudinaryService {
       const response = await axios.post(
         `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
         formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          timeout: 30000,
+        },
       );
 
       console.log('UPLOAD SUCCESS => ', response.data);
 
+      if (!response.data.secure_url) {
+        throw new Error('No secure_url in Cloudinary response');
+      }
+
       return response.data.secure_url;
     } catch (error: any) {
-      console.log(
-        'CLOUDINARY ERROR => ',
-        JSON.stringify(error.response?.data, null, 2),
-      );
+      console.error('CLOUDINARY ERROR DETAILS => ', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        errorField: error.response?.data?.error,
+      });
 
       throw new Error(
-        error.response?.data?.error?.message || 'Failed to upload image',
+        error.response?.data?.error?.message || 
+        error.message ||
+        'Failed to upload image',
       );
     }
   }

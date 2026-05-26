@@ -55,19 +55,6 @@ export class AttendanceService {
       officeSettings.allowed_radius
     );
 
-    // Upload selfie to Cloudinary
-    // let selfieUrl = '';
-    // try {
-    //   const fileName = `checkin_${data.employee_id}_${Date.now()}`;
-    //   selfieUrl = await CloudinaryService.uploadBase64(
-    //     data.selfie_photo,
-    //     fileName,
-    //     'attendance/checkin'
-    //   );
-    // } catch (error: any) {
-    //   console.error('Cloudinary upload error:', error.message);
-    //   throw new Error('Failed to upload selfie. Please try again.');
-    // }
     const selfieUrl = data.selfie_photo;
 
     // Determine attendance status
@@ -158,18 +145,6 @@ export class AttendanceService {
       throw new Error('Already checked out today');
     }
 
-    // Upload selfie to Cloudinary
-    // let selfieUrl = '';
-    // try {
-    //   const fileName = `checkout_${data.employee_id}_${Date.now()}`;
-    //   selfieUrl = await CloudinaryService.uploadBase64(
-    //     data.selfie_photo,
-    //     fileName,
-    //     'attendance/checkout'
-    //   );
-    // } catch (error: any) {
-    //   throw new Error('Failed to upload selfie. Please try again.');
-    // }
     const selfieUrl = data.selfie_photo;
 
     // Check if within radius
