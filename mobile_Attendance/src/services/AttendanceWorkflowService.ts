@@ -2,7 +2,7 @@
 
 import {LocationService} from './LocationService';
 import {CameraService} from './CameraService';
-import {attendanceApi} from '../api/endpoints';
+import {attendanceApi, officeApi, OfficeSettings} from '../api/endpoints';
 import {DeviceInfoService} from './DeviceInfoService';
 import {GeoLocation} from '../types/index';
 
@@ -68,33 +68,40 @@ export class AttendanceWorkflowService {
    */
   static async initialize(): Promise<void> {
     try {
-      // Using default location that can be overridden
-      // In testing: first check-in sets the office location
-      // In production: fetch from backend API
-      if (!this.officeLocation) {
-        this.officeLocation = {
-          latitude: 28.553306, // Default fallback
-          longitude: 77.204705,
-        };
-        console.log(
-          'Office location initialized to default:',
-          this.officeLocation,
-        );
-      }
+      // Fetch office settings from backend so we use the real allowed radius and location.
+      const response = await officeApi.getSettings();
+      const settings = response.data?.data;
 
-      // Increased radius for flexibility during testing
-      // Adjust based on office size and testing needs
-      // Testing: 2000m, Staging: 500m, Production: 100-200m
-      // this.officeRadius = 2000; // 2km radius for testing
-      this.officeRadius = 20; // 20m radius for testing
-      console.log(
-        'Attendance service initialized with radius:',
-        this.officeRadius,
-      );
+      if (settings) {
+        this.officeLocation = {
+          latitude: settings.office_latitude,
+          longitude: settings.office_longitude,
+        };
+        this.officeRadius = settings.allowed_radius;
+        console.log('Loaded office settings from server:', settings);
+      } else {
+        console.warn('Office settings response was empty, using default fallback.');
+      }
     } catch (error) {
-      console.error('Failed to initialize attendance service:', error);
-      // Continue with defaults
+      console.warn(
+        'Failed to fetch office settings from backend, using fallback defaults:',
+        error,
+      );
     }
+
+    if (!this.officeLocation) {
+      this.officeLocation = {
+        latitude: 28.553306,
+        longitude: 77.204705,
+      };
+      console.log('Office location initialized to default:', this.officeLocation);
+    }
+
+    if (!this.officeRadius || this.officeRadius <= 0) {
+      this.officeRadius = 50; // Default 50m radius
+    }
+
+    console.log('Attendance service initialized with radius:', this.officeRadius);
   }
 
   /**

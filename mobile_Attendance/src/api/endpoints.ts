@@ -35,6 +35,15 @@ export interface AttendanceCheckPayload {
   device_info?: string;
 }
 
+export interface OfficeSettings {
+  office_name: string;
+  office_latitude: number;
+  office_longitude: number;
+  allowed_radius: number;
+  office_start_time: string;
+  office_end_time: string;
+}
+
 export const attendanceApi = {
   checkIn: (payload: AttendanceCheckPayload) =>
     apiClient.post('/attendance/check-in', payload, {timeout: 120000}),
@@ -70,6 +79,10 @@ export const attendanceApi = {
   }),
 
   getToday: () => apiClient.get('/attendance/today'),
+};
+
+export const officeApi = {
+  getSettings: () => apiClient.get<ApiResponse<OfficeSettings>>('/office-settings'),
 };
 
 export const leaveApi = {
