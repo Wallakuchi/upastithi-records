@@ -26,7 +26,7 @@ router.get(
             office_name: process.env.OFFICE_NAME || 'Company Office',
             office_latitude: parseFloat(process.env.OFFICE_LATITUDE || '28.553306'),
             office_longitude: parseFloat(process.env.OFFICE_LONGITUDE || '77.2047050'),
-            allowed_radius: parseInt(process.env.OFFICE_RADIUS || '500'),
+            allowed_radius: parseInt(process.env.OFFICE_RADIUS || '50'),
             office_start_time: process.env.OFFICE_START_TIME || '09:00',
             office_end_time: process.env.OFFICE_END_TIME || '18:00',
           },

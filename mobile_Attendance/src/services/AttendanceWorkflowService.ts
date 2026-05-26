@@ -59,7 +59,7 @@ function calculateDistance(
 export class AttendanceWorkflowService {
   private static officeLocation: {latitude: number; longitude: number} | null =
     null;
-  private static officeRadius: number = 100; // Default 100 meters
+  private static officeRadius: number = 50; // Default 50 meters
 
   /**
    * Initialize service with flexible office settings
@@ -86,7 +86,7 @@ export class AttendanceWorkflowService {
       // Adjust based on office size and testing needs
       // Testing: 2000m, Staging: 500m, Production: 100-200m
       // this.officeRadius = 2000; // 2km radius for testing
-      this.officeRadius = 200; // 200m radius for testing
+      this.officeRadius = 20; // 20m radius for testing
       console.log(
         'Attendance service initialized with radius:',
         this.officeRadius,

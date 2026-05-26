@@ -73,7 +73,7 @@ CREATE TABLE "office_settings" (
     "office_name" TEXT NOT NULL DEFAULT 'Company Office',
     "office_latitude" DOUBLE PRECISION NOT NULL DEFAULT 28.553306,
     "office_longitude" DOUBLE PRECISION NOT NULL DEFAULT 77.2047050,
-    "allowed_radius" INTEGER NOT NULL DEFAULT 500,
+    "allowed_radius" INTEGER NOT NULL DEFAULT 50,
     "office_start_time" TEXT NOT NULL DEFAULT '09:00',
     "office_end_time" TEXT NOT NULL DEFAULT '18:00',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

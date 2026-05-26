@@ -19,7 +19,7 @@ export default function SettingsPage() {
     office_name: '',
     office_latitude: 0,
     office_longitude: 0,
-    allowed_radius: 100,
+    allowed_radius: 50,
     office_start_time: '09:00',
     office_end_time: '17:00',
   })
