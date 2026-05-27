@@ -17,11 +17,32 @@ const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 // Middleware
-app.use(helmet());
-app.use(cors({
-  origin: (process.env.CORS_ORIGIN || 'http://localhost:3000').split(','),
-  credentials: true,
-}));
+// app.use(helmet());
+// app.use(cors({
+//   origin: (process.env.CORS_ORIGIN || 'http://localhost:3000').split(','),
+//   credentials: true,
+// }));
+// app.options('*', cors());
+app.use(
+  cors({
+    origin: [
+      'http://localhost:3000',
+      'https://mb-attendance.vercel.app',
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
+
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+  })
+);
+
+// app.use(express.json());
+
 app.options('*', cors());
 app.use(morgan(NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(express.json({ limit: '50mb' }));
