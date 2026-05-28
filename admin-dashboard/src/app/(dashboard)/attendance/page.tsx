@@ -9,16 +9,27 @@ import { ImagePreviewModal } from '@/components/ImagePreviewModal'
 import Link from 'next/link'
 import { Eye } from 'lucide-react'
 
+interface Employee {
+  id: string
+  employee_code?: string
+  name: string
+  designation?: string
+  department?: string
+}
+
 interface AttendanceRecord {
   id: string
-  employee_name: string
-  date: string
+  employee_id: string
+  employee_name?: string
+  attendance_date: string
   check_in_time: string
   check_out_time?: string
-  status: string
+  attendance_status?: string
+  status?: string
   department?: string
   check_in_photo?: string
   check_out_photo?: string
+  employee?: Employee
 }
 
 export default function AttendancePage() {
@@ -48,14 +59,14 @@ export default function AttendancePage() {
     try {
       setLoading(true)
       const response = await attendanceApi.getReport(fromDate, toDate, 1, 100)
-      let data = response?.data || []
+      let data = response?.data?.records || []
 
       if (department) {
-        data = data.filter((r: any) => r.department === department)
+        data = data.filter((r: any) => r.employee?.department === department)
       }
 
       if (status) {
-        data = data.filter((r: any) => r.status === status)
+        data = data.filter((r: any) => r.attendance_status === status)
       }
 
       setRecords(data)
@@ -74,25 +85,20 @@ export default function AttendancePage() {
       return
     }
 
-    if (format === 'csv') {
-      const csv = [
-        ['Employee Name', 'Date', 'Check-in Time', 'Check-out Time', 'Status', 'Department'],
-        ...records.map(r => [
-          r.employee_name,
-          r.date,
-          r.check_in_time,
-          r.check_out_time || '-',
-          r.status,
-          r.department || '-'
-        ])
-      ].map(row => row.join(',')).join('\n')
-
-      const blob = new Blob([csv], { type: 'text/csv' })
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `attendance-${fromDate}-to-${toDate}.csv`
-      a.click()
+    try {
+      if (format === 'csv') {
+        const response = await attendanceApi.exportToCSV(fromDate, toDate, department, status)
+        const blob = new Blob([response.data], { type: 'text/csv' })
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `attendance-${fromDate}-to-${toDate}.csv`
+        a.click()
+        window.URL.revokeObjectURL(url)
+      }
+    } catch (error) {
+      console.error('Export failed:', error)
+      alert('Failed to export. Please try again.')
     }
   }
 
@@ -145,9 +151,8 @@ export default function AttendancePage() {
 
       {/* Export Buttons */}
       <ExportButton
-        onExportCSV={() => {
-          handleExport('csv')
-          return Promise.resolve()
+        onExportCSV={async () => {
+          await handleExport('csv')
         }}
         label="Export"
         disabled={records.length === 0}
@@ -158,7 +163,10 @@ export default function AttendancePage() {
         <table className="w-full text-sm">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
+              <th className="px-6 py-3 text-left font-semibold text-slate-700">Employee Code</th>
               <th className="px-6 py-3 text-left font-semibold text-slate-700">Employee Name</th>
+              <th className="px-6 py-3 text-left font-semibold text-slate-700">Designation</th>
+              <th className="px-6 py-3 text-left font-semibold text-slate-700">Department</th>
               <th className="px-6 py-3 text-left font-semibold text-slate-700">Date</th>
               <th className="px-6 py-3 text-left font-semibold text-slate-700">Check-in</th>
               <th className="px-6 py-3 text-left font-semibold text-slate-700">Check-out</th>
@@ -171,16 +179,19 @@ export default function AttendancePage() {
             {records.length > 0 ? (
               records.map((record) => (
                 <tr key={record.id} className="hover:bg-slate-50">
-                  <td className="px-6 py-4 text-slate-900">{record.employee_name}</td>
-                  <td className="px-6 py-4 text-slate-600">{record.date}</td>
+                  <td className="px-6 py-4 text-slate-900 font-medium">{record.employee?.employee_code || '-'}</td>
+                  <td className="px-6 py-4 text-slate-900">{record.employee?.name || '-'}</td>
+                  <td className="px-6 py-4 text-slate-600">{record.employee?.designation || '-'}</td>
+                  <td className="px-6 py-4 text-slate-600">{record.employee?.department || '-'}</td>
+                  <td className="px-6 py-4 text-slate-600">{new Date(record.attendance_date).toISOString().split('T')[0]}</td>
                   <td className="px-6 py-4 text-slate-600">
-                    {new Date(record.check_in_time).toLocaleTimeString()}
+                    {record.check_in_time ? new Date(record.check_in_time).toLocaleTimeString() : '-'}
                   </td>
                   <td className="px-6 py-4 text-slate-600">
                     {record.check_out_time ? new Date(record.check_out_time).toLocaleTimeString() : '-'}
                   </td>
                   <td className="px-6 py-4">
-                    <StatusBadge status={record.status} size="sm" />
+                    <StatusBadge status={record.attendance_status || record.status || ''} size="sm" />
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex gap-2">
@@ -215,7 +226,7 @@ export default function AttendancePage() {
               ))
             ) : (
               <tr>
-                <td colSpan={7} className="px-6 py-4 text-center text-slate-500">
+                <td colSpan={10} className="px-6 py-4 text-center text-slate-500">
                   No attendance records found
                 </td>
               </tr>

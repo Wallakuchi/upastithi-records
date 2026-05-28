@@ -384,4 +384,81 @@ const outside_office = await prisma.attendance.count({
     totalPages: Math.ceil(total / limit),
   };
 }
+
+  /**
+   * Export attendance to CSV format
+   */
+  static async exportToCSV(
+    startDate: Date,
+    endDate: Date,
+    department?: string,
+    status?: string,
+  ): Promise<string> {
+    const where: any = {
+      attendance_date: {
+        gte: startDate,
+        lte: endDate,
+      },
+    };
+
+    if (department) {
+      where.employee = {
+        department,
+      };
+    }
+
+    if (status) {
+      where.attendance_status = status.toUpperCase();
+    }
+
+    const records = await prisma.attendance.findMany({
+      where,
+      include: {
+        employee: {
+          select: {
+            id: true,
+            employee_code: true,
+            name: true,
+            designation: true,
+            department: true,
+          },
+        },
+      },
+      orderBy: {
+        attendance_date: 'desc',
+      },
+    });
+
+    // Format CSV header
+    const headers = [
+      'Employee Code',
+      'Employee Name',
+      'Date',
+      'Check-in Time',
+      'Check-out Time',
+      'Status',
+      'Department',
+      'Designation',
+    ];
+
+    // Format CSV rows
+    const rows = records.map((record) => [
+      record.employee.employee_code || '',
+      record.employee.name || '',
+      new Date(record.attendance_date).toISOString().split('T')[0],
+      record.check_in_time ? new Date(record.check_in_time).toLocaleTimeString('en-IN') : '-',
+      record.check_out_time ? new Date(record.check_out_time).toLocaleTimeString('en-IN') : '-',
+      record.attendance_status || '',
+      record.employee.department || '',
+      record.employee.designation || '',
+    ]);
+
+    // Combine headers and rows
+    const csv = [
+      headers.map((h) => `"${h}"`).join(','),
+      ...rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')),
+    ].join('\n');
+
+    return csv;
+  }
 }

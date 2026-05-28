@@ -229,4 +229,44 @@ router.get(
   }),
 );
 
+/**
+ * GET /api/attendance/export/csv
+ * Export attendance records to CSV format (Admin/HR only)
+ */
+router.get(
+  '/export/csv',
+  authenticateToken,
+  catchAsync(async (req: any, res: Response) => {
+    try {
+      const { from_date, to_date, department, status } = req.query;
+
+      // Verify user is admin or hr
+      if (!['ADMIN', 'HR'].includes(req.user.role)) {
+        return sendError(res, 403, 'Insufficient permissions');
+      }
+
+      if (!from_date || !to_date) {
+        return sendError(res, 400, 'from_date and to_date are required');
+      }
+
+      // DATE RANGE FIX
+      const fromDate = new Date(from_date);
+      fromDate.setHours(0, 0, 0, 0);
+
+      const toDate = new Date(to_date);
+      toDate.setHours(23, 59, 59, 999);
+
+      const csv = await AttendanceService.exportToCSV(fromDate, toDate, department, status);
+
+      // Set headers for file download
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="attendance-${from_date}-to-${to_date}.csv"`);
+      res.send(csv);
+    } catch (error: any) {
+      console.error('Attendance export error:', error);
+      sendError(res, 400, error.message);
+    }
+  }),
+);
+
 export default router;
